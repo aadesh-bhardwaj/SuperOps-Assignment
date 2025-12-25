@@ -1,0 +1,12 @@
+{
+  "groups": ["Administrators"],
+  "policies": ["AdministratorAccess"],
+  "console_access": true,
+  "programmatic_access": false,
+  "mfa_required": true,
+  "tags": {
+    "Department": "IT",
+    "Role": "Administrator",
+    "AccessLevel": "Full"
+  }
+}
