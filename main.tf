@@ -245,6 +245,24 @@ resource "aws_route_table_association" "private" {
   ]
 }
 
+# Create VPC Endpoint for S3 - allows private access to S3 for package downloads
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+  
+  # Associate with all route tables (both public and private)
+  route_table_ids = concat(
+    [aws_route_table.public.id],
+    var.enable_nat_gateway ? aws_route_table.private[*].id : []
+  )
+
+  tags = {
+    Name        = "${var.project_name}-s3-endpoint"
+    Environment = var.environment
+  }
+}
+
 # Security group for ALB - firewall rules for the load balancer
 resource "aws_security_group" "alb" {
   name_prefix = "${var.project_name}-alb-sg"              # Auto-generate unique name with prefix

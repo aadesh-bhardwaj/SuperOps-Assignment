@@ -1,14 +1,41 @@
 #!/bin/bash
 # User data script to install and configure nginx
 
+# Log all output for debugging
+exec > >(tee -a /var/log/user-data.log)
+exec 2>&1
+echo "Starting user data script at $(date)"
+
+# Wait for network to be fully ready
+sleep 10
+
 # Update system
+echo "Updating system packages..."
 yum update -y
 
-# Install nginx
-amazon-linux-extras install -y nginx
+# Enable nginx in amazon-linux-extras FIRST
+echo "Enabling nginx in amazon-linux-extras..."
+amazon-linux-extras enable nginx1
+
+# Clean metadata to ensure fresh package info
+echo "Cleaning yum metadata..."
+yum clean metadata
+
+# Now install nginx
+echo "Installing nginx..."
+yum install -y nginx
+
+# Verify nginx is installed
+if ! command -v nginx &> /dev/null; then
+    echo "ERROR: nginx installation failed, retrying..."
+    # Try one more time
+    yum clean all
+    yum makecache
+    yum install -y nginx
+fi
 
 # Create custom HTML page with server identification
-cat > /usr/share/nginx/html/index.html <<EOF
+cat > /usr/share/nginx/html/index.html <<'ENDHTML'
 <!DOCTYPE html>
 <html>
 <head>
@@ -72,14 +99,48 @@ cat > /usr/share/nginx/html/index.html <<EOF
     </script>
 </body>
 </html>
-EOF
+ENDHTML
+
+# Replace SERVER_ID placeholder with actual server ID
+sed -i "s/Server \${server_id}/Server ${server_id}/g" /usr/share/nginx/html/index.html
+
+# Verify nginx installation
+if command -v nginx &> /dev/null; then
+    echo "Nginx installed successfully"
+else
+    echo "ERROR: Nginx installation failed!"
+    exit 1
+fi
 
 # Start and enable nginx
+echo "Starting nginx service..."
 systemctl start nginx
 systemctl enable nginx
+
+# Verify nginx is running
+sleep 2
+if systemctl is-active --quiet nginx; then
+    echo "Nginx is running successfully"
+else
+    echo "ERROR: Nginx failed to start. Attempting restart..."
+    systemctl restart nginx
+fi
 
 # Create a health check file
 echo "OK" > /usr/share/nginx/html/health
 
+# Set proper permissions
+chmod 644 /usr/share/nginx/html/index.html
+chmod 644 /usr/share/nginx/html/health
+
 # Log the completion
-echo "Nginx setup completed for Server ${server_id}" >> /var/log/user-data.log
+echo "Nginx setup completed for Server ${server_id} at $(date)"
+echo "Nginx status: $(systemctl is-active nginx)"
+
+# Final verification
+curl -f http://localhost/ > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "SUCCESS: Local curl test passed"
+else
+    echo "WARNING: Local curl test failed"
+fi
