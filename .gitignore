@@ -56,4 +56,4 @@ __pycache__/
 .env
 
 # Terraform lock file (you may want to commit this in production)
-# .terraform.lock.hcl
+.terraform.lock.hcl
