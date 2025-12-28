@@ -1,6 +1,0 @@
-username,email,department,groups,policies,console_access,programmatic_access,mfa_required
-john.doe,john.doe@company.com,Engineering,"Developers,ReadOnly",AmazonEC2ReadOnlyAccess,true,true,true
-jane.smith,jane.smith@company.com,Finance,Finance,AmazonS3ReadOnlyAccess,true,false,false
-bob.wilson,bob.wilson@company.com,IT,"Administrators",AdministratorAccess,true,false,true
-alice.johnson,alice.johnson@company.com,Marketing,ReadOnly,ReadOnlyAccess,true,false,false
-charlie.brown,charlie.brown@company.com,Engineering,"Developers",AmazonEC2FullAccess,true,true,true
